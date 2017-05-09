@@ -1,6 +1,6 @@
 {
-  "name": "typescript-node-api",
-  "version": "1.0.1",
+  "name": "lamport",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {

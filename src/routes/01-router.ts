@@ -1,5 +1,5 @@
 import {Router, Request, Response} from "express";
-var request = require('request');
+var http = require('http');
 export class Server1 {
 
     router:Router;
@@ -16,6 +16,7 @@ export class Server1 {
     }
 
     private start(request:Request, response:Response){
+        console.log('test')
         // Inicializa lista de execução;
         for (var index = 0; index < 20; index++) {
             execucao.push(acoes.SALVAR);
@@ -23,46 +24,65 @@ export class Server1 {
             execucao.push(acoes.VISUALIZAR);
         }
         
-        for (var ex in execucao) {
-            if (execucao.hasOwnProperty(ex)) {
-                var acaoAtual = execucao[ex];
-                this.PedePermissaoDeAcesso();
-                
-                this.ValidaPermissaoUso();
+        Server1.ExecutaProximo();
+    }
 
-                this.ExecutaAcao(acaoAtual);
-            }
+    private static ExecutaProximo(){
+        var acaoAtual:number = execucao.pop();
+        if(acaoAtual){
+            Server1.PedePermissaoDeAcesso();
+            
+            Server1.ValidaPermissaoUso(acaoAtual);
         }
     }
 
-    private ExecutaAcao(acaoAtual:number){
+    private static ExecutaAcao(acaoAtual:number){
         Executando = true;
-        //TODO Implementar Sleep para executar acao.
-        Executando = false;
-        Esperando = false;
+        var tempo:number = 5000;
+        if(acaoAtual == acoes.EDITAR) tempo = 4000;
+        else if (acaoAtual == acoes.VISUALIZAR) tempo = 3000;
+
+        console.log('Executando acao '+ acaoAtual +', t:'+ Time);
+        setTimeout(() =>{
+            Executando = false;
+            Esperando = false;
+            Server1.LiberarRecurso();
+            Server1.ExecutaProximo();
+        })
     }
 
-    private ValidaPermissaoUso(){
-        //TODO Implementar Sleep para esperar acesso ao recurso.
+    private static LiberarRecurso(){
+        console.log('Libera Recurso t:'+ Time);
+        //TODO Avisar outros que o recurso pode ser utilizado.
+    }
+
+    private static ValidaPermissaoUso(acaoAtual:number){
+        if(filaOk.length == filaServers.length){
+            Server1.ExecutaAcao(acaoAtual);
+        }else{
+            setTimeout(Server1.ValidaPermissaoUso(acaoAtual),100);
+        }
     }    
 
-    private PedePermissaoDeAcesso(){
+    private static PedePermissaoDeAcesso(){
         Time = Time + 1;
         TimeInterno = Time;
         Esperando = true;
+        console.log('Pede acesso t:'+ Time);
         for (var key in filaServers) {
             if (filaServers.hasOwnProperty(key)) {
                 var element = filaServers[key];
                 if(element != myRoute){
                     //Remove da fila de OK
                     filaOk.splice(filaOk.indexOf(element), 1);
-                    this.MandaReq(element);
+                    filaPendentes.push(element);
+                    Server1.MandaReq(element);
                 }
             }
         }
     }
 
-    private MandaReq(key:number){
+    private static MandaReq(key:number){
         // Set the headers
         var headers = {
             'User-Agent':       'Super Agent/0.0.1',
@@ -77,50 +97,51 @@ export class Server1 {
             form: {time:TimeInterno, pdi: myRoute}
         }
 
-        // Start the request
-        request(options, function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                //TODO Utilizar resultado do body para trabalhar.
-            }
-        })
+        // // Start the request
+        // request(options, function (error, response, body) {
+        //     if (!error && response.statusCode == 200) {
+        //         //TODO Utilizar resultado do body para trabalhar.
+        //     }
+        // })
     }
 
     private acesso(request:Request, response:Response){
-        this.AtualizaTempo(request.body.time);
+        Server1.AtualizaTempo(request.body.time);
+        console.log('Responde acesso t:'+ Time+ ' pdi:'+ request.body.pdi);
         if(Esperando){
             if(TimeInterno == request.body.time){
                 if(myRoute < request.body.pdi){
-                    this.envia(response, {liberado:false, time: Time, pdi: myRoute})
+                    Server1.envia(response, {liberado:false, time: Time, pdi: myRoute})
                 }else {
                     if(Executando){
-                        this.envia(response, {liberado:false, time: Time, pdi: myRoute})
-                    }else this.envia(response, {liberado:true, time: Time, pdi: myRoute})
+                        Server1.envia(response, {liberado:false, time: Time, pdi: myRoute})
+                    }else Server1.envia(response, {liberado:true, time: Time, pdi: myRoute})
                 }
             }else if(TimeInterno < request.body.time){
-                this.envia(response, {liberado:false, time: Time, pdi: myRoute})
+                Server1.envia(response, {liberado:false, time: Time, pdi: myRoute})
             }else{
                 if(Executando){
-                    this.envia(response, {liberado:false, time: Time, pdi: myRoute})
+                    Server1.envia(response, {liberado:false, time: Time, pdi: myRoute})
                 }else {
                     if(filaOk.indexOf(request.body.pdi) > 0)
                         filaOk.splice(filaOk.indexOf(request.body.pdi), 1);
-                    this.envia(response, {liberado:true, time: Time, pdi: myRoute})
+                    Server1.envia(response, {liberado:true, time: Time, pdi: myRoute})
                 }
             }
         }else{
             TimeInterno = Time;
-            this.envia(response, {liberado:true, time: Time, pdi: myRoute});
+            Server1.envia(response, {liberado:true, time: Time, pdi: myRoute});
         }
     }
 
-    private AtualizaTempo(tempo:number){
+    private static AtualizaTempo(tempo:number){
         if(tempo >= Time){
             Time = tempo;
         }
         Time = Time +1;
     }
 
-    private envia(response:Response, data: any){
+    private static envia(response:Response, data: any){
         response.status(200)
             .send({
                 message: 'Success',
@@ -147,11 +168,10 @@ var Esperando:boolean = false;
 var Executando:boolean = false;
 
 const filaPendentes:Array<number> = []
-const filaOk:Array<number> = [1,2,3,4,5]
-const filaServers:Array<number> = [1,2,3,4,5]
+const filaOk:Array<number> = [1]
+const filaServers:Array<number> = [1]
 
 const myRoute:number = 1;
-const routes:Array<number> = [1, 2, 3, 4, 5];
 
 const server = new Server1();
 server.init();
