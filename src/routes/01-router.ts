@@ -48,7 +48,7 @@ export class Server1 {
             Esperando = false;
             Server1.LiberarRecurso();
             Server1.ExecutaProximo();
-        })
+        },tempo)
     }
 
     private static LiberarRecurso(){
