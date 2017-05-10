@@ -39,17 +39,36 @@ export class Server1 {
 
     private static ExecutaAcao(acaoAtual:number){
         Executando = true;
-        var tempo:number = 5000;
-        if(acaoAtual == acoes.EDITAR) tempo = 4000;
-        else if (acaoAtual == acoes.VISUALIZAR) tempo = 3000;
+        let acaoStr:string;
+        switch(acaoAtual){
+            case acoes.VISUALIZAR:
+                acaoStr = "visualizar";
+            break;
+            case acoes.EDITAR:
+                acaoStr = "editar";
+            break;
+            case acoes.SALVAR:
+                acaoStr = "salvar";
+            break;
+        }
+        console.log('Executando pdi:'+ myRoute+', acao:'+ acaoStr +', t:'+ Time);
 
-        console.log('Executando pdi:'+ myRoute+', acao:'+ acaoAtual +', t:'+ Time);
-        setTimeout(() =>{
-            Executando = false;
-            Esperando = false;
-            Server1.LiberarRecurso();
-            Server1.ExecutaProximo();
-        },tempo)
+        let options = {
+            body: {time:Time, pdi: myRoute},
+            json: true // Automatically stringifies the body to JSON 
+        };
+        
+        RxHR.post('http://localhost:3000/api/docs/'+acaoStr, options).subscribe(
+            (data) => {
+                if (data.response.statusCode === 200) {
+                    Executando = false;
+                    Esperando = false;
+                    Server1.LiberarRecurso();
+                    Server1.ExecutaProximo();
+                }
+            },
+            (err) => console.error(err) // Show error in console 
+        );
     }
 
     private static LiberarRecurso(){

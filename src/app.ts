@@ -6,6 +6,7 @@ import Server2 from "./routes/02-router";
 import Server3 from "./routes/03-router";
 import Server4 from "./routes/04-router";
 import Server5 from "./routes/05-router";
+import Docs from './routes/docs';
 import {RxHR} from "@akanass/rx-http-request";
 
 class App {
@@ -46,6 +47,7 @@ class App {
         this.express.use('/api/3', Server3);
         this.express.use('/api/4', Server4);
         this.express.use('/api/5', Server5);
+        this.express.use('/api/docs', Docs);
     }
 
 }
