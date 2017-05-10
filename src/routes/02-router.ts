@@ -1,6 +1,6 @@
 import {Router, Request, Response} from "express";
 import {RxHR} from "@akanass/rx-http-request";
-export class Server1 {
+export class Server2 {
 
     router:Router;
 
@@ -23,17 +23,17 @@ export class Server1 {
             execucao.push(acoes.VISUALIZAR);
         }
         
-        Server1.ExecutaProximo();
+        Server2.ExecutaProximo();
 
-        Server1.envia(response, {})
+        Server2.envia(response, {})
     }
 
     private static ExecutaProximo(){
         var acaoAtual:number = execucao.pop();
         if(acaoAtual){
-            Server1.PedePermissaoDeAcesso();
+            Server2.PedePermissaoDeAcesso();
             
-            Server1.ValidaPermissaoUso(acaoAtual);
+            Server2.ValidaPermissaoUso(acaoAtual);
         }
     }
 
@@ -47,8 +47,8 @@ export class Server1 {
         setTimeout(() =>{
             Executando = false;
             Esperando = false;
-            Server1.LiberarRecurso();
-            Server1.ExecutaProximo();
+            Server2.LiberarRecurso();
+            Server2.ExecutaProximo();
         },tempo)
     }
 
@@ -81,9 +81,9 @@ export class Server1 {
 
     private static ValidaPermissaoUso(acaoAtual:number){
         if(filaOk.length == filaServers.length){
-            Server1.ExecutaAcao(acaoAtual);
+            Server2.ExecutaAcao(acaoAtual);
         }else{
-            setTimeout(() => {Server1.ValidaPermissaoUso(acaoAtual)},100);
+            setTimeout(() => {Server2.ValidaPermissaoUso(acaoAtual)},100);
         }
     }    
 
@@ -98,7 +98,7 @@ export class Server1 {
                     //Remove da fila de OK
                     filaOk.splice(filaOk.indexOf(element), 1);
                     filaPendentes.push(element);
-                    Server1.MandaReq(element);
+                    Server2.MandaReq(element);
                 }
             }
         }
@@ -129,30 +129,30 @@ export class Server1 {
     }
 
     private acesso(request:Request, response:Response){
-        Server1.AtualizaTempo(request.body.time);
+        Server2.AtualizaTempo(request.body.time);
         if(Esperando){
             if(TimeInterno == request.body.time){
                 if(myRoute < request.body.pdi){
-                    Server1.envia(response, {liberado:false, time: Time, pdi: myRoute})
+                    Server2.envia(response, {liberado:false, time: Time, pdi: myRoute})
                 }else {
                     if(Executando){
-                        Server1.envia(response, {liberado:false, time: Time, pdi: myRoute})
-                    }else Server1.envia(response, {liberado:true, time: Time, pdi: myRoute})
+                        Server2.envia(response, {liberado:false, time: Time, pdi: myRoute})
+                    }else Server2.envia(response, {liberado:true, time: Time, pdi: myRoute})
                 }
             }else if(TimeInterno < request.body.time){
-                Server1.envia(response, {liberado:false, time: Time, pdi: myRoute})
+                Server2.envia(response, {liberado:false, time: Time, pdi: myRoute})
             }else{
                 if(Executando){
-                    Server1.envia(response, {liberado:false, time: Time, pdi: myRoute})
+                    Server2.envia(response, {liberado:false, time: Time, pdi: myRoute})
                 }else {
                     if(filaOk.indexOf(request.body.pdi) > 0)
                         filaOk.splice(filaOk.indexOf(request.body.pdi), 1);
-                    Server1.envia(response, {liberado:true, time: Time, pdi: myRoute})
+                    Server2.envia(response, {liberado:true, time: Time, pdi: myRoute})
                 }
             }
         }else{
             TimeInterno = Time;
-            Server1.envia(response, {liberado:true, time: Time, pdi: myRoute});
+            Server2.envia(response, {liberado:true, time: Time, pdi: myRoute});
         }
     }
 
@@ -179,9 +179,9 @@ export class Server1 {
             filaOk.push(request.body.pdi);
         }
 
-        Server1.AtualizaTempo(request.body.time);
+        Server2.AtualizaTempo(request.body.time);
 
-        Server1.envia(response, {time: Time, pdi: myRoute})
+        Server2.envia(response, {time: Time, pdi: myRoute})
     }
 }
 
@@ -201,9 +201,9 @@ const filaPendentes:Array<number> = []
 const filaOk:Array<number> = [1, 2, 3, 4, 5]
 const filaServers:Array<number> = [1, 2, 3, 4, 5]
 
-const myRoute:number = 1;
+const myRoute:number = 2;
 
-const ser = new Server1();
+const ser = new Server2();
 ser.init();
 
 export default ser.router;
